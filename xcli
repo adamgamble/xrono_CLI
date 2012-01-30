@@ -52,9 +52,15 @@ class Xcli < Thor
     table(:border => true) do
       row do
         column('NAME', :width => 20)
+        column('ESTIMATED HOURS', :width => 20)
+        column('HOURS WORKED', :width => 20)
+        column('PERCENTAGE COMPLETE', :width => 20)
       end
       row do
         column(current_ticket["name"])
+        column(current_ticket["estimated_hours"])
+        column(current_ticket["hours"])
+        column(current_ticket["percentage_complete"])
       end
     end
   end
@@ -93,8 +99,9 @@ class Xcli < Thor
   end
 
   def current_ticket
+    return @current_ticket if @current_ticket
     require_login
-    ticket = self.class.get("/api/v1/tickets", :body => {:auth_token => @token, :repo_url => git_repo_url, :branch => current_branch_name}).first
+    @current_ticket = self.class.get("/api/v1/tickets", :body => {:auth_token => @token, :repo_url => git_repo_url, :branch => current_branch_name}).first
   end
 end
 Xcli.start
