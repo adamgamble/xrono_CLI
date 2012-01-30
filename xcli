@@ -13,17 +13,19 @@ class Xcli < Thor
   desc 'clients', 'list clients'
   method_option :initials, :type => :string
   def clients
-    require_login
-    clients = self.class.get("/api/v1/clients", :body => {:auth_token => @token, :initials => options[:initials]})
-    table(:border => true) do
-      row do
-        column('Initials', :width => 20)
-        column('NAME', :width => 20)
-      end
-      clients.each do |client|
+    report(:message => 'Loading Clients...', :complete => '', :indent_size => 8) do
+      require_login
+      clients = self.class.get("/api/v1/clients", :body => {:auth_token => @token, :initials => options[:initials]})
+      table(:border => true) do
         row do
-          column(client["initials"])
-          column(client["name"])
+          column('Initials', :width => 20)
+          column('NAME', :width => 20)
+        end
+        clients.each do |client|
+          row do
+            column(client["initials"])
+            column(client["name"])
+          end
         end
       end
     end
@@ -32,16 +34,17 @@ class Xcli < Thor
   desc 'projects', 'list projects'
   method_option :client_initials, :type => :string
   def projects
-    require_login
-    puts git_repo_url
-    projects = self.class.get("/api/v1/projects", :body => {:auth_token => @token, :client_initials => options[:client_initials]})
-    table(:border => true) do
-      row do
-        column('NAME', :width => 20)
-      end
-      projects.each do |project|
+    report(:message => 'Loading projects...', :complete => '', :indent_size => 8) do
+      require_login
+      projects = self.class.get("/api/v1/projects", :body => {:auth_token => @token, :client_initials => options[:client_initials]})
+      table(:border => true) do
         row do
-          column(project["name"])
+          column('NAME', :width => 20)
+        end
+        projects.each do |project|
+          row do
+            column(project["name"])
+          end
         end
       end
     end
@@ -49,18 +52,20 @@ class Xcli < Thor
 
   desc 'ticket', 'show current ticket based on git repo and branch'
   def ticket
-    table(:border => true) do
-      row do
-        column('NAME', :width => 20)
-        column('ESTIMATED HOURS', :width => 20)
-        column('HOURS WORKED', :width => 20)
-        column('PERCENTAGE COMPLETE', :width => 20)
-      end
-      row do
-        column(current_ticket["name"])
-        column(current_ticket["estimated_hours"])
-        column(current_ticket["hours"])
-        column(current_ticket["percentage_complete"])
+    report(:message => 'Loading current ticket...', :complete => '', :indent_size => 8) do
+      table(:border => true) do
+        row do
+          column('NAME', :width => 20)
+          column('ESTIMATED HOURS', :width => 20)
+          column('HOURS WORKED', :width => 20)
+          column('PERCENTAGE COMPLETE', :width => 20)
+        end
+        row do
+          column(current_ticket["name"])
+          column(current_ticket["estimated_hours"])
+          column(current_ticket["hours"])
+          column("#{current_ticket["percentage_complete"].to_s}%")
+        end
       end
     end
   end
@@ -68,12 +73,14 @@ class Xcli < Thor
   desc 'enter_time', 'enter time to current ticket based on git repo and branch'
   method_options :hours => :numeric, :message => :string
   def enter_time
-    require_login
-    status = self.class.post("/api/v1/work_units", :body => {:work_unit => {:ticket_id => current_ticket["id"], :hours => options[:hours], :hours_type => "Normal", :description => options[:message], :scheduled_at => Time.now.to_s}, :auth_token => @token})
-    if status["success"]
-      puts "Time Entered"
-    else
-      puts "It didn't work"
+    report(:message => 'Creating work unit...', :complete => '', :indent_size => 8) do
+      require_login
+      status = self.class.post("/api/v1/work_units", :body => {:work_unit => {:ticket_id => current_ticket["id"], :hours => options[:hours], :hours_type => "Normal", :description => options[:message], :scheduled_at => Time.now.to_s}, :auth_token => @token})
+      if status["success"]
+        puts "Time Entered"
+      else
+        puts "It didn't work"
+      end
     end
   end
 
