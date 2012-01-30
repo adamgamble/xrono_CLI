@@ -3,7 +3,7 @@ Gem::Specification.new do |s|
   s.version     = '0.0.1'
   s.summary     = "Xrono Command Line Client"
   s.description = "Xrono Command Line Client"
-  s.authors     = ["Adam Gamble", "Ben Holee"]
+  s.authors     = ["Adam Gamble", "Ben Holley"]
   s.email       = ['adamgamble@gmail.com','ben@isotope11.com']
   s.files       = ["bin/xcli"]
   s.bindir      = "bin"
