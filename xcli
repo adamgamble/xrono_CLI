@@ -1,0 +1,100 @@
+#!/usr/bin/env ruby
+
+require 'command_line_reporter'
+require 'thor'
+require 'httparty'
+require 'grit'
+
+class Xcli < Thor
+  include CommandLineReporter
+  include HTTParty
+  base_uri 'http://127.0.0.1:3000'
+
+  desc 'clients', 'list clients'
+  method_option :initials, :type => :string
+  def clients
+    require_login
+    clients = self.class.get("/api/v1/clients", :body => {:auth_token => @token, :initials => options[:initials]})
+    table(:border => true) do
+      row do
+        column('Initials', :width => 20)
+        column('NAME', :width => 20)
+      end
+      clients.each do |client|
+        row do
+          column(client["initials"])
+          column(client["name"])
+        end
+      end
+    end
+  end
+
+  desc 'projects', 'list projects'
+  method_option :client_initials, :type => :string
+  def projects
+    require_login
+    puts git_repo_url
+    projects = self.class.get("/api/v1/projects", :body => {:auth_token => @token, :client_initials => options[:client_initials]})
+    table(:border => true) do
+      row do
+        column('NAME', :width => 20)
+      end
+      projects.each do |project|
+        row do
+          column(project["name"])
+        end
+      end
+    end
+  end
+
+  desc 'ticket', 'show current ticket based on git repo and branch'
+  def ticket
+    table(:border => true) do
+      row do
+        column('NAME', :width => 20)
+      end
+      row do
+        column(current_ticket["name"])
+      end
+    end
+  end
+
+  desc 'enter_time', 'enter time to current ticket based on git repo and branch'
+  method_options :hours => :numeric, :message => :string
+  def enter_time
+    require_login
+    status = self.class.post("/api/v1/work_units", :body => {:work_unit => {:ticket_id => current_ticket["id"], :hours => options[:hours], :hours_type => "Normal", :description => options[:message], :scheduled_at => Time.now.to_s}, :auth_token => @token})
+    if status["success"]
+      puts "Time Entered"
+    else
+      puts "It didn't work"
+    end
+  end
+
+  private
+
+  def current_branch_name
+    r = Grit::Repo.new('.')
+    r.head.name
+  end
+
+  def git_repo_url
+    r = Grit::Repo.new('.')
+    r.config["remote.origin.url"]
+  end
+
+  def require_login
+    login unless @token
+  end
+
+  def login
+    login_response = self.class.post("/api/v1/tokens", :body => {:email => "dev@xrono.org", :password => "123456"})
+    @token = login_response["token"]
+  end
+
+  def current_ticket
+    require_login
+    ticket = self.class.get("/api/v1/tickets", :body => {:auth_token => @token, :repo_url => git_repo_url, :branch => current_branch_name}).first
+  end
+end
+Xcli.start
