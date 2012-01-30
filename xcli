@@ -112,6 +112,25 @@ class Xcli < Thor
     end
   end
 
+  desc 'status', 'show information about the current user'
+  def status
+    report(:message => 'Loading status...', :complete => '', :indent_size => 8) do
+      require_login
+      table(:border => true) do
+        row do
+          column('USERNAME', :width => 20)
+          column('CURRENT HOURS', :width => 20)
+          column('OFFSET', :width => 20)
+        end
+        row do
+          column(DEFAULT_USERNAME)
+          column(@current_hours)
+          column(@offset)
+        end
+      end
+    end
+  end
+
   private
 
   def current_branch_name
@@ -130,7 +149,9 @@ class Xcli < Thor
 
   def login
     login_response = self.class.post("/api/v1/tokens", :body => {:email => "dev@xrono.org", :password => "123456"})
-    @token = login_response["token"]
+    @token          = login_response["token"]
+    @current_hours  = login_response["current_hours"]
+    @offset         = login_response["offset"]
   end
 
   def current_ticket
